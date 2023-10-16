@@ -1,38 +1,9 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractBaseUser
-from django.core.validators import EmailValidator
 from django.db import models
 
-from .validators import validate_username
 
 User = get_user_model()
-
-
-class CustomUser(AbstractBaseUser):
-    username = models.CharField(
-        max_length=150,
-        unique=True,
-        validators=[
-            validate_username
-        ],
-        verbose_name='Логин',
-        help_text='Логин'
-    )
-
-    email = models.EmailField(
-        unique=True,
-        blank=False,
-        null=False,
-        validators=[
-            EmailValidator(
-                message="Введите корректный адрес электронной почты."
-            )
-        ],
-        verbose_name='Email',
-    )
-
-    def __str__(self):
-        return self.username
 
 
 class MeasurementUnit(models.Model):

@@ -44,11 +44,17 @@ class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all().order_by('id')
 
     serializer_class = RecipeSerializer
-    filterset_fields = ('author', 'tags', 'is_favorited', 'is_in_shopping_cart')
+    filterset_fields = (
+        'author',
+        'tags',
+        'is_favorited',
+        'is_in_shopping_cart'
+    )
     permission_classes = (AuthorOrAdminOrReadOnly,)
 
     def create(self, request, *args, **kwargs):
-        # Используем сериализатор для создания рецепта для проверки и сохранения данных
+        # Используем сериализатор для создания
+        # рецепта для проверки и сохранения данных
         create_serializer = RecipeCreateSerializer(data=request.data)
         if create_serializer.is_valid():
             # Мы добавляем автора из запроса
@@ -128,7 +134,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
         # Создаем HttpResponse
         response = HttpResponse(content, content_type='text/plain')
-        response['Content-Disposition'] = 'attachment; filename="shop_list.txt"'
+        response['Content-Disposition'] = ('attachment;'
+                                           ' filename="shop_list.txt"')
 
         return response
 
@@ -138,7 +145,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
             recipe = get_object_or_404(Recipe, id=pk)
 
             # Проверка на наличие рецепта в избранном
-            if ShopList.objects.filter(user=request.user, recipe=recipe).exists():
+            if ShopList.objects.filter(
+                    user=request.user,
+                    recipe=recipe
+            ).exists():
                 return Response(
                     {'errors': 'Рецепт уже в списке покупок.'},
                     status=status.HTTP_400_BAD_REQUEST
@@ -146,13 +156,19 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
             ShopList.objects.create(user=request.user, recipe=recipe)
 
-            serializer = FavoriteRecipeSerializer(recipe, context={'request': request})
+            serializer = FavoriteRecipeSerializer(
+                recipe,
+                context={'request': request}
+            )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         elif request.method == 'DELETE':
             # Попытаемся найти рецепт в избранном и удалить его
             try:
-                shop_list = ShopList.objects.get(user=request.user, recipe_id=pk)
+                shop_list = ShopList.objects.get(
+                    user=request.user,
+                    recipe_id=pk
+                )
                 shop_list.delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)
             except ShopList.DoesNotExist:
@@ -232,7 +248,10 @@ class FollowUserViewSet(viewsets.ViewSet):
             author = get_object_or_404(User, id=pk)
 
             # Проверка на наличие пользователя в подписках
-            if Follow.objects.filter(user=request.user, author=author).exists():
+            if Follow.objects.filter(
+                    user=request.user,
+                    author=author
+            ).exists():
                 return Response(
                     {'errors': 'Автор уже в подписках.'},
                     status=status.HTTP_400_BAD_REQUEST
@@ -240,7 +259,10 @@ class FollowUserViewSet(viewsets.ViewSet):
 
             Follow.objects.create(user=request.user, author=author)
 
-            serializer = FollowUserSerializer(author, context={'request': request})
+            serializer = FollowUserSerializer(
+                author,
+                context={'request': request}
+            )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         elif request.method == 'DELETE':

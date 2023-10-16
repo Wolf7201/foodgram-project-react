@@ -77,7 +77,8 @@ class CustomUserSerializer(UserSerializer):
         user = self.context.get('request').user \
             if self.context.get('request') else None
 
-        # Проверяем, подписан ли текущий пользователь на объект пользователя (obj)
+        # Проверяем, подписан ли текущий
+        # пользователь на объект пользователя (obj)
         if user and user.is_authenticated:
             return user.following.filter(author=obj).exists()
 
@@ -94,7 +95,14 @@ class CustomUserCreateSerializer(UserCreateSerializer):
 
     class Meta(UserCreateSerializer.Meta):
         model = User
-        fields = ('email', 'id', 'username', 'first_name', 'last_name', 'password')
+        fields = (
+            'email',
+            'id',
+            'username',
+            'first_name',
+            'last_name',
+            'password'
+        )
 
 
 class Base64ImageField(serializers.ImageField):
