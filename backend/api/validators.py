@@ -8,7 +8,9 @@ def validate_color(value):
     try:
         webcolors.hex_to_rgb(value)
     except ValueError as e:
-        raise serializers.ValidationError("Недопустимое значение цвета.") from e
+        raise serializers.ValidationError(
+            "Недопустимое значение цвета."
+        ) from e
 
 
 def validate_email_format(value):

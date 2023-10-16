@@ -37,7 +37,9 @@ class IngredientSerializer(serializers.ModelSerializer):
 
 class RecipeIngredientSerializer(serializers.ModelSerializer):
     name = serializers.CharField(source='ingredient.name')
-    measurement_unit = serializers.CharField(source='ingredient.measurement_unit.abbreviation')
+    measurement_unit = serializers.CharField(
+        source='ingredient.measurement_unit.abbreviation'
+    )
 
     class Meta:
         model = RecipeIngredient
@@ -61,11 +63,19 @@ class CustomUserSerializer(UserSerializer):
 
     class Meta(UserSerializer.Meta):
         model = User
-        fields = ('email', 'id', 'username', 'first_name', 'last_name', 'is_subscribed')
+        fields = (
+            'email',
+            'id',
+            'username',
+            'first_name',
+            'last_name',
+            'is_subscribed'
+        )
 
     def get_is_subscribed(self, obj):
         # Получаем текущего пользователя, если есть
-        user = self.context.get('request').user if self.context.get('request') else None
+        user = self.context.get('request').user \
+            if self.context.get('request') else None
 
         # Проверяем, подписан ли текущий пользователь на объект пользователя (obj)
         if user and user.is_authenticated:
@@ -133,7 +143,10 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     def get_is_favorited(self, obj):
         user = self.context.get('request').user
-        return FavoriteRecipe.objects.filter(user=user, recipe=obj).exists()
+        return FavoriteRecipe.objects.filter(
+            user=user,
+            recipe=obj
+        ).exists()
 
     def get_is_in_shopping_cart(self, obj):
         user = self.context.get('request').user
@@ -227,7 +240,8 @@ class FollowUserSerializer(CustomUserSerializer):
     recipes_count = serializers.SerializerMethodField()
 
     class Meta(CustomUserSerializer.Meta):
-        fields = CustomUserSerializer.Meta.fields + ('recipes', 'recipes_count')
+        fields = (CustomUserSerializer.Meta.fields
+                  + ('recipes', 'recipes_count'))
 
     def get_recipes_count(self, obj):
         return obj.recipes.count()

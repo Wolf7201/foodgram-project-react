@@ -54,9 +54,17 @@ class RecipeViewSet(viewsets.ModelViewSet):
             # Мы добавляем автора из запроса
             recipe = create_serializer.save(author=self.request.user)
             # Теперь используем основной сериализатор для формирования ответа
-            response_serializer = RecipeSerializer(recipe, context={'request': request})
-            return Response(response_serializer.data, status=status.HTTP_201_CREATED)
-        return Response(create_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            response_serializer = RecipeSerializer(
+                recipe, context={'request': request}
+            )
+            return Response(
+                response_serializer.data,
+                status=status.HTTP_201_CREATED
+            )
+        return Response(
+            create_serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
     def partial_update(self, request, *args, **kwargs):
         recipe = self.get_object()
@@ -67,15 +75,30 @@ class RecipeViewSet(viewsets.ModelViewSet):
         )  # учитываем, что это частичное обновление
         if update_serializer.is_valid():
             updated_recipe = update_serializer.save()
-            response_serializer = RecipeSerializer(updated_recipe, context={'request': request})
-            return Response(response_serializer.data, status=status.HTTP_200_OK)
-        return Response(update_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            response_serializer = RecipeSerializer(
+                updated_recipe,
+                context={'request': request}
+            )
+            return Response(
+                response_serializer.data,
+                status=status.HTTP_200_OK
+            )
+        return Response(
+            update_serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
     @action(detail=False, methods=['GET'], url_path='download_shopping_cart')
     def download_shopping_cart(self, request):
-        user_recipes = ShopList.objects.filter(user_id=request.user.id).values_list('recipe_id', flat=True)
+        user_recipes = ShopList.objects.filter(
+            user_id=request.user.id
+        ).values_list(
+            'recipe_id',
+            flat=True
+        )
 
-        # Производим запрос к базе данных для получения всех ингредиентов для данных рецептов
+        # Производим запрос к базе данных для получения
+        # всех ингредиентов для данных рецептов
         ingredients_info = RecipeIngredient.objects.filter(
             recipe_id__in=user_recipes
         ).select_related(
@@ -116,7 +139,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
             # Проверка на наличие рецепта в избранном
             if ShopList.objects.filter(user=request.user, recipe=recipe).exists():
-                return Response({'errors': 'Рецепт уже в списке покупок.'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {'errors': 'Рецепт уже в списке покупок.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
             ShopList.objects.create(user=request.user, recipe=recipe)
 
@@ -130,7 +156,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 shop_list.delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)
             except ShopList.DoesNotExist:
-                return Response({'detail': 'Рецепт не найден в избранном.'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {'detail': 'Рецепт не найден в избранном.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
     @action(detail=True, methods=['POST', 'DELETE'], url_path='favorite')
     def favorite(self, request, pk=None):
@@ -139,21 +168,42 @@ class RecipeViewSet(viewsets.ModelViewSet):
             # Проверка существования рецепта
             recipe = get_object_or_404(Recipe, id=pk)
             # Проверка на наличие рецепта в избранном
-            if FavoriteRecipe.objects.filter(user=request.user, recipe=recipe).exists():
-                return Response({'errors': 'Рецепт уже в избранном.'}, status=status.HTTP_400_BAD_REQUEST)
+            if FavoriteRecipe.objects.filter(
+                    user=request.user,
+                    recipe=recipe
+            ).exists():
+                return Response(
+                    {'errors': 'Рецепт уже в избранном.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
-            FavoriteRecipe.objects.create(user=request.user, recipe=recipe)
+            FavoriteRecipe.objects.create(
+                user=request.user,
+                recipe=recipe
+            )
 
-            serializer = FavoriteRecipeSerializer(recipe, context={'request': request})
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            serializer = FavoriteRecipeSerializer(
+                recipe,
+                context={'request': request}
+            )
+            return Response(
+                serializer.data,
+                status=status.HTTP_201_CREATED
+            )
 
         elif request.method == 'DELETE':
             try:
-                favorite_recipe = FavoriteRecipe.objects.get(user=request.user, recipe_id=pk)
+                favorite_recipe = FavoriteRecipe.objects.get(
+                    user=request.user,
+                    recipe_id=pk
+                )
                 favorite_recipe.delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)
             except FavoriteRecipe.DoesNotExist:
-                return Response({'detail': 'Рецепт не найден в избранном.'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {'detail': 'Рецепт не найден в избранном.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
 
 class FollowUserViewSet(viewsets.ViewSet):
@@ -162,11 +212,16 @@ class FollowUserViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['GET'], url_path='subscriptions')
     def get_subscriptions(self, request):
         # Получаем всех авторов, на которых подписан текущий пользователь
-        followed_users = request.user.following.all().values_list('author', flat=True)
+        followed_users = (request.user.following.all()
+                          .values_list('author', flat=True))
         users = User.objects.filter(id__in=followed_users)
 
         # Получаем информацию о каждом авторе с помощью нашего сериализатора
-        serializer = FollowUserSerializer(users, many=True, context={'request': request})
+        serializer = FollowUserSerializer(
+            users,
+            many=True,
+            context={'request': request}
+        )
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['POST', 'DELETE'], url_path='subscribe')
@@ -178,7 +233,10 @@ class FollowUserViewSet(viewsets.ViewSet):
 
             # Проверка на наличие пользователя в подписках
             if Follow.objects.filter(user=request.user, author=author).exists():
-                return Response({'errors': 'Автор уже в подписках.'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {'errors': 'Автор уже в подписках.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
             Follow.objects.create(user=request.user, author=author)
 
@@ -192,4 +250,7 @@ class FollowUserViewSet(viewsets.ViewSet):
                 follow.delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)
             except Follow.DoesNotExist:
-                return Response({'detail': 'Не найдена подписка на автора.'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {'detail': 'Не найдена подписка на автора.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
