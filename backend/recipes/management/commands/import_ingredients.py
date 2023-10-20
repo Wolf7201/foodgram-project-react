@@ -1,6 +1,6 @@
 import json
 from django.core.management.base import BaseCommand
-from recipes.models import Ingredient, MeasurementUnit
+from recipes.models import Ingredient
 
 
 class Command(BaseCommand):
@@ -24,22 +24,11 @@ class Command(BaseCommand):
                 print(f'Из файла получен ингредиент:'
                       f' {ingredient_name}')
 
-                unit, created_unit = (
-                    MeasurementUnit.objects.
-                    get_or_create(abbreviation=unit_name)
-                )
-                if created_unit:
-                    self.stdout.write(self.style.SUCCESS(
-                        f'Создана единица измерения: {unit_name}'))
-                else:
-                    self.stdout.write(self.style.WARNING(
-                        f'Дубликат единицы измерения: {unit_name}'))
-
                 ingredient, created_ingredient = (
                     Ingredient.
                     objects.get_or_create(
                         name=ingredient_name,
-                        measurement_unit=unit))
+                        measurement_unit=unit_name))
                 if created_ingredient:
                     self.stdout.write(self.style.SUCCESS(
                         f'Создан ингредиент: {ingredient_name}'))

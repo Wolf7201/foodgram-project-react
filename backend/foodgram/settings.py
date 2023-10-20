@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'recipes.apps.RecipesConfig',
+    'customusers.apps.CustomusersConfig',
     'api.apps.ApiConfig',
     'rest_framework',
     'rest_framework.authtoken',
@@ -32,7 +33,7 @@ INSTALLED_APPS = [
     'drf_yasg',
     'django_filters',
     'corsheaders',
-
+    'colorfield',
 ]
 
 MIDDLEWARE = [
@@ -128,10 +129,9 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
     ],
-
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 6,
 }
+
+AUTH_USER_MODEL = 'customusers.CustomUser'
 
 DJOSER = {
     'LOGIN_FIELD': 'email',
@@ -144,7 +144,6 @@ DJOSER = {
         'user': 'api.serializers.CustomUserSerializer',
         'user_list': 'api.serializers.CustomUserSerializer',
         'current_user': 'api.serializers.CustomUserSerializer',
-        'user_create': 'api.serializers.CustomUserCreateSerializer',
     },
 }
 

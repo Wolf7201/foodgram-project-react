@@ -1,27 +1,24 @@
 from django.contrib import admin
 
 from .models import (
-    MeasurementUnit,
     Ingredient,
     Tag,
     Recipe,
     RecipeIngredient,
-    Follow,
     FavoriteRecipe,
     ShopList,
 )
 
 
-class MeasurementUnitAdmin(admin.ModelAdmin):
-    list_display = ('pk', 'abbreviation',)
-    search_fields = ('abbreviation',)
-    empty_value_display = '-пусто-'
+class RecipeIngredientInline(admin.TabularInline):
+    model = RecipeIngredient
+    extra = 1
 
 
 class IngredientAdmin(admin.ModelAdmin):
     list_display = ('pk', 'name', 'measurement_unit',)
     search_fields = ('name',)
-    list_filter = ('measurement_unit',)
+    list_filter = ('name',)
     empty_value_display = '-пусто-'
 
 
@@ -35,6 +32,7 @@ class RecipeAdmin(admin.ModelAdmin):
     list_display = ('pk', 'name', 'author', 'cooking_time',)
     search_fields = ('name', 'author__username',)
     list_filter = ('tags', 'author',)
+    inlines = [RecipeIngredientInline]
     empty_value_display = '-пусто-'
 
 
@@ -44,11 +42,10 @@ class RecipeIngredientAdmin(admin.ModelAdmin):
     list_filter = ('recipe', 'ingredient',)
     empty_value_display = '-пусто-'
 
+    def number_of_favorites(self, obj):
+        return FavoriteRecipe.objects.filter(recipe=obj).count()
 
-class FollowAdmin(admin.ModelAdmin):
-    list_display = ('pk', 'user', 'author',)
-    search_fields = ('user__username', 'author__username',)
-    empty_value_display = '-пусто-'
+    number_of_favorites.short_description = 'Количество добавлений в избранное'
 
 
 class FavoriteRecipeAdmin(admin.ModelAdmin):
@@ -63,11 +60,9 @@ class ShopListAdmin(admin.ModelAdmin):
     empty_value_display = '-пусто-'
 
 
-admin.site.register(MeasurementUnit, MeasurementUnitAdmin)
 admin.site.register(Ingredient, IngredientAdmin)
 admin.site.register(Tag, TagAdmin)
 admin.site.register(Recipe, RecipeAdmin)
 admin.site.register(RecipeIngredient, RecipeIngredientAdmin)
-admin.site.register(Follow, FollowAdmin)
 admin.site.register(FavoriteRecipe, FavoriteRecipeAdmin)
 admin.site.register(ShopList, ShopListAdmin)
