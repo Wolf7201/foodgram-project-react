@@ -1,4 +1,3 @@
-import re
 import webcolors
 
 from django.core.exceptions import ValidationError

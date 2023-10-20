@@ -94,7 +94,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
         content = self.format_content(ingredients_data)
 
         response = HttpResponse(content, content_type='text/plain')
-        response['Content-Disposition'] = 'attachment; filename="shop_list.txt"'
+        response['Content-Disposition'] = ('attachment;'
+                                           ' filename="shop_list.txt"')
         return response
 
     def create_relationship(self, recipe_id, serializer_class):

@@ -3,7 +3,6 @@ from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from django.db import transaction
-from pprint import pprint
 
 from customusers.models import (
     CustomUser,
@@ -102,13 +101,17 @@ class RecipeSerializer(serializers.ModelSerializer):
     def get_is_favorited(self, obj):
         request = self.context.get('request')
         if hasattr(obj, 'is_favorited'):
-            return request and request.user.is_authenticated and obj.is_favorited
+            return (request
+                    and request.user.is_authenticated
+                    and obj.is_favorited)
         return False
 
     def get_is_in_shopping_cart(self, obj):
         request = self.context.get('request')
         if hasattr(obj, 'is_in_shopping_cart'):
-            return request and request.user.is_authenticated and obj.is_in_shopping_cart
+            return (request
+                    and request.user.is_authenticated
+                    and obj.is_in_shopping_cart)
         return False
 
 

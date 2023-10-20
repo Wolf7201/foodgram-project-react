@@ -17,7 +17,9 @@ class CustomUserAdmin(admin.ModelAdmin):
             'fields': ('first_name', 'last_name')
         }),
         ('Permissions', {
-            'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions'),
+            'fields': ('is_active', 'is_staff',
+                       'is_superuser', 'groups',
+                       'user_permissions'),
         }),
         ('Important dates', {
             'fields': ('last_login', 'date_joined')
@@ -27,7 +29,9 @@ class CustomUserAdmin(admin.ModelAdmin):
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('email', 'username', 'password1', 'password2', 'first_name', 'last_name')
+            'fields': ('email', 'username',
+                       'password1', 'password2',
+                       'first_name', 'last_name')
         }),
     )
 
