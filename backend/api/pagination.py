@@ -1,5 +1,7 @@
-from rest_framework.pagination import LimitOffsetPagination
+from django.conf import settings
+from rest_framework.pagination import PageNumberPagination
 
 
-class CustomLimitOffsetPagination(LimitOffsetPagination):
-    default_limit = 6
+class CustomPageNumberPagination(PageNumberPagination):
+    page_size_query_param = 'limit'
+    page_size = settings.DEFAULT_PAGE_SIZE

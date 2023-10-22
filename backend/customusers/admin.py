@@ -1,10 +1,12 @@
 from django.contrib import admin
-from .models import CustomUser, Follow
+from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import Group
 from rest_framework.authtoken.models import TokenProxy
 
+from .models import User, Follow
 
-class CustomUserAdmin(admin.ModelAdmin):
+
+class CustomUserAdmin(UserAdmin):
     list_display = ('email', 'username', 'first_name', 'last_name', 'is_staff')
     search_fields = ('email', 'username', 'first_name', 'last_name')
     list_filter = ('is_staff', 'is_active', 'date_joined')
@@ -42,12 +44,12 @@ class FollowAdmin(admin.ModelAdmin):
     ordering = ('id',)
 
 
-admin.site.register(CustomUser, CustomUserAdmin)
+admin.site.register(User, CustomUserAdmin)
 admin.site.register(Follow, FollowAdmin)
 
-if Group in admin.site._registry:
-    admin.site.unregister(Group)
+admin.site.unregister(Group)
 
-# Не отключается!!!
+# Идея с коварством мне нравится (〜^∇^)〜
+# строку пока оставлю, а то забуду.
 if TokenProxy in admin.site._registry:
     admin.site.unregister(TokenProxy)

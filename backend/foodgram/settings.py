@@ -131,13 +131,14 @@ REST_FRAMEWORK = {
     ],
 }
 
-AUTH_USER_MODEL = 'customusers.CustomUser'
+AUTH_USER_MODEL = 'customusers.User'
 
 DJOSER = {
     'LOGIN_FIELD': 'email',
 
     'PERMISSIONS': {
         'user': ['rest_framework.permissions.IsAuthenticatedOrReadOnly'],
+        'user_list': ['rest_framework.permissions.IsAuthenticatedOrReadOnly'],
     },
 
     'SERIALIZERS': {
@@ -151,3 +152,5 @@ CORS_URLS_REGEX = r'^/api/.*$'
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
 ]
+
+DEFAULT_PAGE_SIZE = 6

@@ -1,14 +1,14 @@
 from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
-from djoser.views import UserViewSet
+from djoser.views import UserViewSet as DjoserUserViewSet
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from djoser.views import UserViewSet as DjoserUserViewSet
-
+from django_filters.rest_framework import DjangoFilterBackend
 from customusers.models import (
-    CustomUser,
+    User,
     Follow,
 )
 from recipes.models import (
@@ -19,8 +19,9 @@ from recipes.models import (
     FavoriteRecipe,
     ShopList,
 )
-from .pagination import CustomLimitOffsetPagination
-from .permissions import AdminOrReadOnly, AuthorOrReadOnly
+from .filters import RecipeFilter, IngredientFilter
+from .pagination import CustomPageNumberPagination
+from .permissions import AuthorOrReadOnly
 from .serializers import (
     TagSerializer, IngredientSerializer,
     RecipeSerializer, RecipeCreateSerializer,
@@ -30,31 +31,23 @@ from .serializers import (
 )
 
 
-class PaginatedUserViewSet(UserViewSet):
-    pagination_class = CustomLimitOffsetPagination
-
-
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
 
 
-class IngredientViewSet(viewsets.ModelViewSet):
+class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
-    permission_classes = (AdminOrReadOnly,)
-    search_fields = ('name',)
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = IngredientFilter
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
-    pagination_class = CustomLimitOffsetPagination
+    pagination_class = CustomPageNumberPagination
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = RecipeFilter
 
-    filterset_fields = (
-        'author',
-        'tags',
-        'is_favorited',
-        'is_in_shopping_cart'
-    )
     permission_classes = (AuthorOrReadOnly,)
 
     def get_serializer_class(self):
@@ -99,23 +92,22 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return response
 
     def create_relationship(self, recipe_id, serializer_class):
-        recipe = get_object_or_404(Recipe, id=recipe_id)
-        data = {'user': self.request.user.id, 'recipe': recipe.id}
+        data = {'user': self.request.user.id, 'recipe': recipe_id}
         serializer = serializer_class(
             data=data,
             context={'request': self.request}
         )
 
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def delete_relationship(self, recipe_id, model):
         request = self.request
+        recipe = get_object_or_404(Recipe, id=recipe_id)
         count, info = model.objects.filter(
             user=request.user,
-            recipe_id=recipe_id
+            recipe=recipe
         ).delete()
         if count:
             return Response(status=status.HTTP_204_NO_CONTENT)
@@ -138,43 +130,46 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
 
 class UserViewSet(DjoserUserViewSet):
-    queryset = CustomUser.objects.all()
-    pagination_class = CustomLimitOffsetPagination
+    queryset = User.objects.all()
+    pagination_class = CustomPageNumberPagination
     serializer_class = CustomUserSerializer
+
+    def get_permissions(self):
+        if self.action == 'me':
+            self.permission_classes = [IsAuthenticated]
+        return super(UserViewSet, self).get_permissions()
 
     @action(detail=False, methods=['GET'], url_path='subscriptions')
     def get_subscriptions(self, request):
         # Получаем всех авторов, на которых подписан текущий пользователь
-        followed_users = (request.user.following.all()
-                          .values_list('author', flat=True))
-        users = CustomUser.objects.filter(id__in=followed_users)
+        users = User.objects.filter(followers__user=request.user)
 
         # Получаем информацию о каждом авторе с помощью нашего сериализатора
+        page = self.paginate_queryset(users)
         serializer = FollowUserSerializer(
-            users,
+            page,
             many=True,
-            context={'request': request}
+            context={'request': request, 'recipes_limit': 6}
         )
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return self.get_paginated_response(serializer.data)
 
     def create_relationship(self, user_id, serializer_class):
-        author = get_object_or_404(CustomUser, id=user_id)
+        author = get_object_or_404(User, id=user_id)
         data = {'user': self.request.user.id, 'author': author.id}
         serializer = serializer_class(
             data=data,
             context={'request': self.request}
         )
-        print('finish create_relationship')
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def delete_relationship(self, user_id, model):
         request = self.request
+        author = get_object_or_404(User, id=user_id)
         count, info = model.objects.filter(
             user=request.user,
-            author=user_id
+            author=author
         ).delete()
         if count:
             return Response(status=status.HTTP_204_NO_CONTENT)
@@ -184,7 +179,6 @@ class UserViewSet(DjoserUserViewSet):
 
     @action(detail=True, methods=['POST', 'DELETE'], url_path='subscribe')
     def subscribe(self, request, id):
-        print('subscribe')
         if request.method == 'POST':
             return self.create_relationship(id, FollowCreateSerializer)
         return self.delete_relationship(id, Follow)

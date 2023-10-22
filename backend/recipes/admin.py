@@ -42,10 +42,9 @@ class RecipeIngredientAdmin(admin.ModelAdmin):
     list_filter = ('recipe', 'ingredient',)
     empty_value_display = '-пусто-'
 
+    @admin.display(description='Количество добавлений в избранное')
     def number_of_favorites(self, obj):
         return FavoriteRecipe.objects.filter(recipe=obj).count()
-
-    number_of_favorites.short_description = 'Количество добавлений в избранное'
 
 
 class FavoriteRecipeAdmin(admin.ModelAdmin):

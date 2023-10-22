@@ -1,5 +1,7 @@
 import json
+
 from django.core.management.base import BaseCommand
+
 from recipes.models import Ingredient
 
 
@@ -13,6 +15,7 @@ class Command(BaseCommand):
             # Открываем JSON файл для чтения
             with open(json_file_path, 'r', encoding='utf-8') as file:
                 data = json.load(file)
+            ingredients_to_create = []
 
             # Проходим по данным JSON и создаем записи в базе данных
             for item in data:
@@ -24,21 +27,28 @@ class Command(BaseCommand):
                 print(f'Из файла получен ингредиент:'
                       f' {ingredient_name}')
 
-                ingredient, created_ingredient = (
-                    Ingredient.
-                    objects.get_or_create(
-                        name=ingredient_name,
-                        measurement_unit=unit_name))
-                if created_ingredient:
-                    self.stdout.write(self.style.SUCCESS(
-                        f'Создан ингредиент: {ingredient_name}'))
-                else:
-                    self.stdout.write(self.style.WARNING(
-                        f'Дубликат ингредиента: {ingredient_name}', ))
-                print()
+                ingredient = Ingredient(
+                    name=ingredient_name,
+                    measurement_unit=unit_name
+                )
 
-        except FileNotFoundError:
+                if ingredient in ingredients_to_create:
+                    self.stdout.write(self.style.WARNING(
+                        f'Дубликат ингредиента: {ingredient_name}')
+                    )
+                else:
+                    self.stdout.write(self.style.SUCCESS(
+                        f'Добавлен ингредиент: {ingredient_name}')
+                    )
+                    ingredients_to_create.append(
+                        ingredient
+                    )
+
+            Ingredient.objects.bulk_create(ingredients_to_create)
+            self.stdout.write(self.style.SUCCESS(
+                f'Создано {len(ingredients_to_create)} новых ингредиентов')
+            )
+        except Exception as e:
             self.stdout.write(self.style.ERROR(
-                'Файл не найден. Пожалуйста,'
-                ' убедитесь, что JSON файл существует.')
+                f'Ошибка при загрузке ингредиентов: {e}')
             )
