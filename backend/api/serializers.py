@@ -13,7 +13,7 @@ from recipes.models import (
     Recipe, FavoriteRecipe,
     ShopList
 )
-from .validators import validate_color
+from recipes.validators import validate_color
 
 User = get_user_model()
 
@@ -34,7 +34,7 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = RecipeIngredient
-        fields = ['id', 'name', 'measurement_unit', 'amount']
+        fields = ('id', 'name', 'measurement_unit', 'amount')
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -81,7 +81,7 @@ class RecipeSerializer(serializers.ModelSerializer):
     )
     is_favorited = serializers.BooleanField(default=False)
     is_in_shopping_cart = serializers.BooleanField(default=False)
-    image = serializers.ImageField(use_url=True)
+    image = serializers.SerializerMethodField()
 
     class Meta:
         model = Recipe
@@ -97,6 +97,10 @@ class RecipeSerializer(serializers.ModelSerializer):
             'text',
             'cooking_time',
         )
+
+    def get_image(self, obj):
+        if obj.image:
+            return obj.image.url
 
 
 class RecipeIngredientCreateSerializer(serializers.ModelSerializer):
@@ -185,17 +189,6 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         return recipe
 
     def update(self, instance, validated_data):
-        """
-        Я чет забыл днем спросить, так что решил не удалять.
-        (っ◔◡◔)っ
-
-        Вопросик, у нас есть валидация, она не пропускает
-        данные, если у нас нет полей с тегами и ингредиентами,
-        но тут то у нас метод patch, который подразумевает
-        возможность частичного изменения данных. Как так?
-
-        """
-
         ingredients_data = validated_data.pop('ingredients')
         tags_data = validated_data.pop('tags')
         instance.ingredients.clear()
@@ -213,11 +206,15 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
 
 
 class ShortRecipeSerializer(serializers.ModelSerializer):
-    image = serializers.ImageField(use_url=True)
+    image = serializers.SerializerMethodField()
 
     class Meta:
         model = Recipe
         fields = ('id', 'name', 'image', 'cooking_time')
+
+    def get_image(self, obj):
+        if obj.image:
+            return obj.image.url
 
 
 class FollowUserSerializer(CustomUserSerializer):
@@ -243,13 +240,6 @@ class FollowUserSerializer(CustomUserSerializer):
 
 
 class FollowCreateSerializer(serializers.ModelSerializer):
-    user = serializers.PrimaryKeyRelatedField(
-        queryset=User.objects.all()
-    )
-    author = serializers.PrimaryKeyRelatedField(
-        queryset=User.objects.all()
-    )
-
     class Meta:
         model = Follow
         fields = ('user', 'author')
@@ -280,9 +270,6 @@ class FollowCreateSerializer(serializers.ModelSerializer):
 
 
 class BaseActionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ShopList
-        fields = ('user', 'recipe')
 
     def to_representation(self, instance):
         response_serializer = ShortRecipeSerializer(

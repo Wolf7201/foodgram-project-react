@@ -1,5 +1,5 @@
-from django_filters import (
-    FilterSet, NumberFilter,
+from django_filters.rest_framework import (
+    FilterSet,
     AllValuesMultipleFilter,
     BooleanFilter, CharFilter,
 )
@@ -8,7 +8,6 @@ from recipes.models import Recipe, Ingredient
 
 
 class RecipeFilter(FilterSet):
-    author = NumberFilter(field_name='author')
     tags = AllValuesMultipleFilter(field_name='tags__slug')
     is_in_shopping_cart = BooleanFilter(
         method='filter_is_in_shopping_cart'
@@ -19,18 +18,20 @@ class RecipeFilter(FilterSet):
 
     class Meta:
         model = Recipe
-        fields = ()
+        fields = ('author', 'tags',
+                  'is_in_shopping_cart',
+                  'is_favorited')
 
     def filter_is_favorited(self, queryset, name, value):
         user = self.request.user
-        if value and not user.is_anonymous:
+        if value and user.is_authenticated:
             return queryset.filter(favorite__user=user)
         return queryset
 
     def filter_is_in_shopping_cart(self, queryset, name, value):
         user = self.request.user
-        if value and not user.is_anonymous:
-            return queryset.filter(shop_cart__user=user)
+        if value and user.is_authenticated:
+            return queryset.filter(shop_list__user=user)
         return queryset
 
 
@@ -39,4 +40,4 @@ class IngredientFilter(FilterSet):
 
     class Meta:
         model = Ingredient
-        fields = ()
+        fields = ('name',)

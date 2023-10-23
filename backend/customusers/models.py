@@ -7,8 +7,6 @@ MAX_LENGTH_TEXT_FIELD = 150
 MAX_LENGTH_EMAIL = 254
 
 
-# Менеджер нужен был потому что я не понял,
-# что он не нужен (⊙‿⊙)/
 class User(AbstractUser):
     email = models.EmailField(
         max_length=MAX_LENGTH_EMAIL,

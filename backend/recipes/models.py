@@ -1,11 +1,11 @@
 from colorfield.fields import ColorField
+from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models import OuterRef, Exists
 
-from customusers.models import User
-
 MAX_LENGTH_TEXT_FIELD = 200
+User = get_user_model()
 
 
 class RecipeManager(models.Manager):
